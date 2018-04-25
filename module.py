@@ -34,25 +34,29 @@ class BottleSoftmax(Bottle, nn.Softmax):
     pass
 
 class LayerNormalization(nn.Module):
-    ''' Layer normalization module '''
 
-    def __init__(self, d_hid, eps=1e-3):
+    def __init__(self, features, epsilon=1e-6):
+        '''Applies layer normalization.
+
+        Args:
+          epsilon: A floating number. A very small number for preventing ZeroDivision Error.
+        '''
         super(LayerNormalization, self).__init__()
+        self.epsilon = epsilon
+        self.gamma = nn.Parameter(torch.ones(features))
+        self.beta = nn.Parameter(torch.zeros(features))
 
-        self.eps = eps
-        self.a_2 = nn.Parameter(torch.ones(d_hid), requires_grad=True)
-        self.b_2 = nn.Parameter(torch.zeros(d_hid), requires_grad=True)
+    def forward(self, input):
 
-    def forward(self, z):
-        if z.size(1) == 1:
-            return z
+        '''
+        if input.size(1) == 1:
+            return input
+        '''
 
-        mu = torch.mean(z, keepdim=True, dim=-1)
-        sigma = torch.std(z, keepdim=True, dim=-1)
-        ln_out = (z - mu.expand_as(z)) / (sigma.expand_as(z) + self.eps)
-        ln_out = ln_out * self.a_2.expand_as(ln_out) + self.b_2.expand_as(ln_out)
+        mean = input.mean(dim=-1, keepdim=True)
+        std = input.std(dim=-1, keepdim=True)
 
-        return ln_out
+        return self.gamma * (input - mean) / (std + self.epsilon) + self.beta
 
 class BatchBottle(nn.Module):
     ''' Perform the reshape routine before and after an operation '''
