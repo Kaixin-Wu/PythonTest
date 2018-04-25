@@ -22,7 +22,7 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="test", choices=["train", "test"])
+    parser.add_argument('-option', type=str, default="train", choices=["train", "test"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
@@ -35,7 +35,7 @@ def config_initializer():
     parser.add_argument('-params_initializer', default='uniform', choices=['uniform', 'normal'], type=str)
     parser.add_argument('-params_scale', default=1.0, type=float)
     parser.add_argument('-optimizer', default="Adam", type=str, choices=['Warmup_Adam', 'Adam'], help="Optimizer methods")
-    parser.add_argument('-positional_encoding', default='learned', type=str, choices=['sinusoid', 'learned'],
+    parser.add_argument('-positional_encoding', default='sinusoid', type=str, choices=['sinusoid', 'learned'],
                         help="Positional encoding methods")
 
     parser.add_argument('-d_model', default=512, type=int)
@@ -170,7 +170,7 @@ def main(args):
 
             # get loss according cross_entropy(smoothing distribution)
             smoothing_loss, correct_tokens = label_smoothing_loss(scores, gold_tgt_tokens_flatten)
-            mean_loss = torch.sum(smoothing_loss) / pred_tgt_word_num
+            mean_loss = smoothing_loss / pred_tgt_word_num
 
             mean_loss.backward()
 
@@ -205,16 +205,6 @@ def main(args):
                 t1 = time.time()
                 print("[Valid] [loss:%5.2f] [acc:%5.2f%%] [ppl:%5.2f] [time:%5.2fs]" %
                       (valid_loss, acc, ppl, t1-t0))
-
-                valid_loss, ppl, acc = evaluate_loss(transformer, valid_data, cross_entropy_loss)
-                # hypotheses = inference(transformer, valid_data)
-
-                # print("Saving model...")
-                # if not os.path.isdir(args.save_to):
-                #     os.makedirs(args.save_to)
-                # torch.save(transformer.state_dict(), args.save_to + "transformer_%d.pt" % (epoch+1))
-                # torch.save(transformer, args.save_to + 'transformer_%d.pkl' % (epoch+1))
-                # print("Saving finish...\n")
 
         epoch += 1
         end_epoch = time.time()

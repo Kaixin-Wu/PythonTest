@@ -9,21 +9,19 @@ import torch.nn.functional as F
 def label_smoothing_loss(logits, gold_words, pad_idx=constants.PAD, epsilon=0.1, cuda=True):
 
     # one_hot distribution
-    one_hot_template = torch.zeros_like(logits).view(-1)
-    idxs = torch.LongTensor([i*logits.size(-1) for i in range(logits.size(0))])
-    gold_words_flatten = gold_words + Variable(idxs.cuda(), volatile=False, requires_grad=False)
-    one_hot_template[gold_words_flatten] = 1.
-    one_hot_gold = one_hot_template.view(-1, logits.size(-1))
+    one_hot_template = torch.zeros_like(logits)
+    one_hot_gold = one_hot_template.scatter_(1, gold_words.view(-1, 1), 1)
 
     # soft distribution
-    smoothing_gold = one_hot_gold * (1 - epsilon) + (1 - one_hot_gold) * (epsilon / (logits.size(-1) - 1))
+    # smoothing_gold = one_hot_gold * (1 - epsilon) + (1 - one_hot_gold) * (epsilon / (logits.size(-1) - 1))
+    smoothing_loss = one_hot_gold * (1. - epsilon) + epsilon / (logits.size(-1))
     log_softmax_scores = F.log_softmax(logits, dim=-1)
-    smoothing_loss = -smoothing_gold * log_softmax_scores
+    smoothing_loss = -torch.sum(smoothing_loss * log_softmax_scores, dim=-1)
 
     # mask the padding
     padding_mask =  gold_words.ne(pad_idx)
-    padding_mask_smoothing = padding_mask.unsqueeze(1).float()
-    smoothing_loss_padding = smoothing_loss * padding_mask_smoothing
+    padding_mask_smoothing = padding_mask.float()
+    smoothing_loss_padding = torch.sum(smoothing_loss * padding_mask_smoothing)
 
     # statistic correct words
     _, argmax_idxs = torch.max(logits, dim=-1)
