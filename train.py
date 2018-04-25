@@ -22,7 +22,7 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="train", choices=["train", "test"])
+    parser.add_argument('-option', type=str, default="test", choices=["train", "test"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
