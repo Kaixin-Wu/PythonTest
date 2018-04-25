@@ -13,11 +13,14 @@ class MultiHeadAttention(nn.Module):
         self.attention_mechanism = attention_mechanism
 
         if attention_mechanism == "self-attention":
-            self.w_qkv = nn.Sequential(Linear(d_model, 3*d_model), nn.ReLU())
+            # self.w_qkv = nn.Sequential(Linear(d_model, 3*d_model), nn.ReLU())
+            self.w_qkv = Linear(d_model, 3 * d_model)
 
         if attention_mechanism == "vanilla-attention":
-            self.w_q = nn.Sequential(Linear(d_model, d_model), nn.ReLU())
-            self.w_kv = nn.Sequential(Linear(d_model, 2*d_model), nn.ReLU())
+            # self.w_q = nn.Sequential(Linear(d_model, d_model), nn.ReLU())
+            # self.w_kv = nn.Sequential(Linear(d_model, 2*d_model), nn.ReLU())
+            self.w_q = Linear(d_model, d_model)
+            self.w_kv = Linear(d_model, 2*d_model)
 
         self.attention = ScaledDotProductAttention(d_model, n_head)
         self.layer_norm = LayerNormalization(d_model)

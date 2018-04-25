@@ -53,7 +53,6 @@ def test(args):
             one_step_idx = argmax_idxs[-1].data[0]
 
             pred_output[i] = vocab.tgt.id2word[one_step_idx]
-            pred[i+1] = vocab.tgt.id2word[one_step_idx]
             if (one_step_idx == constants.EOS) or (i == args.decode_max_steps-1):
                 print("[Source] %s" % " ".join(test))
                 print("[Predict] %s" % " ".join(pred_output[:i]))
@@ -62,5 +61,6 @@ def test(args):
                 output_file.write(" ".join(pred_output[:i])+"\n")
                 output_file.flush()
                 break
+            pred[i+1] = vocab.tgt.id2word[one_step_idx]
 
     output_file.close()

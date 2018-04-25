@@ -22,7 +22,7 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="train", choices=["train", "test"])
+    parser.add_argument('-option', type=str, default="test", choices=["train", "test"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
@@ -34,7 +34,7 @@ def config_initializer():
 
     parser.add_argument('-params_initializer', default='uniform', choices=['uniform', 'normal'], type=str)
     parser.add_argument('-params_scale', default=1.0, type=float)
-    parser.add_argument('-optimizer', default="Adam", type=str, choices=['Warmup_Adam', 'Adam'], help="Optimizer methods")
+    parser.add_argument('-optimizer', default="Warmup_Adam", type=str, choices=['Warmup_Adam', 'Adam'], help="Optimizer methods")
     parser.add_argument('-positional_encoding', default='sinusoid', type=str, choices=['sinusoid', 'learned'],
                         help="Positional encoding methods")
 
@@ -48,7 +48,7 @@ def config_initializer():
     parser.add_argument('-n_layers_dec', default=2, type=int, help="Layers of decoder block")
 
     parser.add_argument('-dropout', default=0.1, type=float)
-    parser.add_argument('-n_warmup_steps', default=16000, type=int)
+    parser.add_argument('-n_warmup_steps', default=4000, type=int)
     parser.add_argument('-embs_share_weight', default=False, type=bool)
     parser.add_argument('-proj_share_weight', default=False, type=bool)
 
