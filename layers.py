@@ -8,8 +8,8 @@ class EncoderLayer(nn.Module):
 
     def __init__(self, d_model, d_inner_hid, n_head, d_k, d_v, dropout=0.1):
         super(EncoderLayer, self).__init__()
-        self.slf_attn = MultiHeadAttention(
-            n_head, d_model, d_k, d_v, dropout=dropout)
+        self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout,
+                                           attention_mechanism="self-attention")
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner_hid, dropout=dropout)
 
     def forward(self, enc_input, slf_attn_mask=None):
@@ -23,8 +23,10 @@ class DecoderLayer(nn.Module):
 
     def __init__(self, d_model, d_inner_hid, n_head, d_k, d_v, dropout=0.1):
         super(DecoderLayer, self).__init__()
-        self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
-        self.enc_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout,
+                                           attention_mechanism="self-attention")
+        self.enc_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout,
+                                           attention_mechanism="vanilla-attention")
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner_hid, dropout=dropout)
 
     def forward(self, dec_input, enc_output, slf_attn_mask=None, dec_enc_attn_mask=None):
