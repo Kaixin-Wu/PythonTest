@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.init as init
 from module import Linear, ScaledDotProductAttention, LayerNormalization
 
 class MultiHeadAttention(nn.Module):

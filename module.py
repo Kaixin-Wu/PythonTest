@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import numpy as np
+import torch.nn.functional as F
 
 __author__ = "Wu Kaixin"
 
@@ -79,7 +80,6 @@ class ScaledDotProductAttention(nn.Module):
         super(ScaledDotProductAttention, self).__init__()
         self.temper = np.power(d_model // n_head, 0.5)
         self.dropout = nn.Dropout(attn_dropout)
-        self.softmax = BottleSoftmax()
 
     def forward(self, q, k, v, attn_mask=None):
 
@@ -94,7 +94,7 @@ class ScaledDotProductAttention(nn.Module):
 
             attn.data.masked_fill_(attn_mask, -float('inf'))
 
-        attn = self.softmax(attn)
+        attn = F.softmax(attn, dim=-1)
         attn = self.dropout(attn)
         output = torch.bmm(attn, v)
 
