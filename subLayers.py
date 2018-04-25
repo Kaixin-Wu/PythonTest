@@ -17,9 +17,8 @@ class MultiHeadAttention(nn.Module):
             self.w_qkv = nn.Sequential(Linear(d_model, 3*d_model), nn.ReLU())
 
         if attention_mechanism == "vanilla-attention":
-            self.w_qs = nn.Sequential(Linear(d_model, d_model), nn.ReLU())
-            self.w_ks = nn.Sequential(Linear(d_model, d_model), nn.ReLU())
-            self.w_vs = nn.Sequential(Linear(d_model, d_model), nn.ReLU())
+            self.w_q = nn.Sequential(Linear(d_model, d_model), nn.ReLU())
+            self.w_kv = nn.Sequential(Linear(d_model, 2*d_model), nn.ReLU())
 
         self.attention = ScaledDotProductAttention(d_model, n_head)
         self.layer_norm = LayerNormalization(d_model)
@@ -36,9 +35,8 @@ class MultiHeadAttention(nn.Module):
             qs, ks, vs = torch.split(self.w_qkv(q), split_size=q.size(-1), dim=-1)
 
         if self.attention_mechanism == "vanilla-attention":
-            qs = self.w_qs(q)  # (N, T_q, C)
-            ks = self.w_ks(k)  # (N, T_q, C)
-            vs = self.w_vs(v)  # (N, T_q, C)
+            qs = self.w_q(q)
+            ks, vs = torch.split(self.w_kv(k), split_size=k.size(-1), dim=-1)
 
         # Split and concat
         q_ = torch.cat(torch.chunk(qs, self.n_head, dim=-1), dim=0)  # (h*N, T_q, C/h)
