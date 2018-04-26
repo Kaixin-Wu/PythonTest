@@ -84,6 +84,42 @@ def read_corpus(file_path, source):
 
 def word_batch_slice(data, word_batch_size, sort=True):
     """
+    word batch, same as Google's Transformer
+    """
+    word_batch_data = []
+    cur_room = word_batch_size
+    src_sents = []
+    tgt_sents = []
+    for pair in data:
+        src_sent, tgt_sent = pair
+        remain_room = cur_room - max(len(src_sent), len(tgt_sent))
+
+        if remain_room > 0:
+            src_sents.append(src_sent)
+            tgt_sents.append(tgt_sent)
+
+            cur_room = remain_room
+        else:
+            word_batch_data.append((src_sents, tgt_sents))
+
+            src_sents = []
+            tgt_sents = []
+
+            src_sents.append(src_sent)
+            tgt_sents.append(tgt_sent)
+
+            cur_room = word_batch_size -  max(len(src_sent), len(tgt_sent))
+
+    word_batch_data.append((src_sents, tgt_sents))
+
+    for batch_pair in word_batch_data:
+        src_sents, tgt_sents = batch_pair
+
+        yield src_sents, tgt_sents
+
+'''
+def word_batch_slice(data, word_batch_size, sort=True):
+    """
     word batch
     """
     batch_size = word_batch_size // len(data[0][0])
@@ -99,6 +135,7 @@ def word_batch_slice(data, word_batch_size, sort=True):
             tgt_sents = [tgt_sents[src_id] for src_id in src_ids]
 
         yield src_sents, tgt_sents
+'''
 
 def sentence_batch_slice(data, batch_size, sort=True):
     """

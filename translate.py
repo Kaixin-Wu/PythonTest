@@ -38,6 +38,7 @@ def test(args):
         pred_output = [constants.PAD_WORD] * args.decode_max_steps
         test_var = to_input_variable([test], vocab.src, cuda=args.cuda, is_test=True)
 
+        # only need one time
         enc_output = translator.encode(test_var[0], test_var[1])
         for i in range(args.decode_max_steps):
             pred_var = to_input_variable([pred[:i+1]], vocab.tgt, cuda=args.cuda, is_test=True)

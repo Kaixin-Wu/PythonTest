@@ -22,14 +22,14 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="test", choices=["train", "test"])
+    parser.add_argument('-option', type=str, default="train", choices=["train", "test"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
     parser.add_argument('-epochs', default=20, type=int, help="Max epochs")
-    parser.add_argument('-batch_type', default="sentence_batch", type=str, choices=['sentence_batch', 'word_batch'],
+    parser.add_argument('-batch_type', default="word_batch", type=str, choices=['sentence_batch', 'word_batch'],
                         help="1.sentence_batch(Sentence number for each batch) 2.word_batch(token number for each batch)")
-    parser.add_argument('-batch_size', default=20, type=int, help="Batch size")
+    parser.add_argument('-batch_size', default=100, type=int, help="Batch size")
     parser.add_argument('-max_seq_len', default=120, type=int, help="Using for Recording positional encoding")
 
     parser.add_argument('-params_initializer', default='uniform', choices=['uniform', 'normal'], type=str)
