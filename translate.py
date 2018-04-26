@@ -38,9 +38,11 @@ def test(args):
         pred_output = [constants.PAD_WORD] * args.decode_max_steps
         test_var = to_input_variable([test], vocab.src, cuda=args.cuda, is_test=True)
 
+        enc_output = translator.encode(test_var[0], test_var[1])
         for i in range(args.decode_max_steps):
             pred_var = to_input_variable([pred[:i+1]], vocab.tgt, cuda=args.cuda, is_test=True)
-            scores = translator(test_var, pred_var)
+
+            scores = translator.translate(enc_output, test_var[0], pred_var)
 
             _, argmax_idxs = torch.max(scores, dim=-1)
             one_step_idx = argmax_idxs[-1].data[0]
