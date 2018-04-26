@@ -29,22 +29,15 @@ def test(args):
     if args.cuda:
         translator = translator.cuda()
 
-    test_data = read_corpus(args.valid_src, source="src")
-    gold_data = read_corpus(args.valid_tgt, source="tgt")
+    test_data = read_corpus(args.decode_from_file, source="src")
     # ['<BOS>', '<PAD>', 'PAD', '<PAD>', '<PAD>']
     pred_data = len(test_data) * [[constants.PAD_WORD if i else constants.BOS_WORD for i in range(args.decode_max_steps)]]
 
     output_file = codecs.open(args.decode_output_file, "w", encoding="utf-8")
-    for test, pred, gold in zip(test_data, pred_data, gold_data):
-
+    for test, pred in zip(test_data, pred_data):
         pred_output = [constants.PAD_WORD] * args.decode_max_steps
-
         test_var = to_input_variable([test], vocab.src, cuda=args.cuda, is_test=True)
-        gold_var = to_input_variable([gold[:-1]], vocab.tgt, cuda=args.cuda, is_test=True)
-        gold_scores = translator(test_var, gold_var)
-        _, argmax_idxs = torch.max(gold_scores, dim=-1)
-        numpy_idxs = argmax_idxs.data.cpu().numpy()
-        print("[Gold] %s" % " ".join([vocab.tgt.id2word[idx] for idx in numpy_idxs]))
+
         for i in range(args.decode_max_steps):
             pred_var = to_input_variable([pred[:i+1]], vocab.tgt, cuda=args.cuda, is_test=True)
             scores = translator(test_var, pred_var)
