@@ -27,16 +27,18 @@ def config_initializer():
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
     parser.add_argument('-epochs', default=20, type=int, help="Max epochs")
-    parser.add_argument('-batch_type', default="word_batch", type=str, choices=['sentence_batch', 'word_batch'],
+    parser.add_argument('-batch_type', default="sentence_batch", type=str, choices=['sentence_batch', 'word_batch'],
                         help="1.sentence_batch(Sentence number for each batch) 2.word_batch(token number for each batch)")
-    parser.add_argument('-batch_size', default=100, type=int, help="Batch size")
+    parser.add_argument('-batch_size', default=20, type=int, help="Batch size")
     parser.add_argument('-max_seq_len', default=120, type=int, help="Using for Recording positional encoding")
 
     parser.add_argument('-params_initializer', default='uniform', choices=['uniform', 'normal'], type=str)
     parser.add_argument('-params_scale', default=1.0, type=float)
-    parser.add_argument('-optimizer', default="Warmup_Adam", type=str, choices=['Warmup_Adam', 'Adam'], help="Optimizer methods")
+    parser.add_argument('-optimizer', default="Warmup_Adam", type=str, choices=['Warmup_Adam', 'Adam', 'SGD'],
+                        help="Optimizer methods")
     parser.add_argument('-positional_encoding', default='sinusoid', type=str, choices=['sinusoid', 'learned'],
                         help="Positional encoding methods")
+    parser.add_argument('-lr', default=0.0001, type=float, help="Learning rate")
 
     parser.add_argument('-d_model', default=512, type=int)
     parser.add_argument('-d_inner_hid', default=512, type=int)
@@ -51,6 +53,9 @@ def config_initializer():
     parser.add_argument('-n_warmup_steps', default=4000, type=int)
     parser.add_argument('-embs_share_weight', default=False, type=bool)
     parser.add_argument('-proj_share_weight', default=False, type=bool)
+
+    parser.add_argument('-finetune', default=False, type=bool)
+    parser.add_argument('-finetune_model_path', default="./models/transformer_epoch4", type=str)
 
     parser.add_argument('-decode_max_steps', default=120, type=int)
     parser.add_argument('-clip_grad', default=0., type=float, help="Clip gradient")
@@ -69,7 +74,7 @@ def config_initializer():
     parser.add_argument('-valid_tgt', default='./2000sents/valid.en', type=str, help="Path of the valid target file")
 
     # inference phase
-    parser.add_argument('-decode_model_path', type=str, default="./models/transformer_4.pt", help="Path of the model file")
+    parser.add_argument('-decode_model_path', type=str, default="./models/transformer_epoch4", help="Path of the model file")
     parser.add_argument('-decode_from_file', type=str, default="./2000sents/valid.ch", help="Path of the input file to decode")
     parser.add_argument('-decode_output_file', type=str, default="./2000sents/decode.output", help="Output of the decode file")
 
@@ -86,8 +91,14 @@ def init_training(args):
 
     # load vocabulary
     vocab = torch.load(args.vocab)
+
     # build model
     transformer = Transformer(args, vocab)
+
+    # if finetune
+    if args.finetune:
+        print("[Finetune] %s" % args.finetune_model_path)
+        transformer.load_state_dict(torch.load(args.finetune_model_path))
 
     # vocab_mask for masking padding
     vocab_mask = torch.ones(len(vocab.tgt))
@@ -109,7 +120,10 @@ def init_training(args):
 
     if args.optimizer == "Adam":
         optimizer = torch.optim.Adam(params=transformer.get_trainable_parameters(),
-                                     lr=0.0001, betas=(0.9, 0.98), eps=1e-8)
+                                     lr=args.lr, betas=(0.9, 0.98), eps=1e-8)
+
+    if args.optimizer == 'SGD':
+        optimizer = torch.optim.SGD(params=transformer.get_trainable_parameters(), lr=args.lr)
 
     return vocab, transformer, optimizer, cross_entropy_loss
 
@@ -213,13 +227,16 @@ def main(args):
         print("Saving model...")
         if not os.path.isdir(args.save_to):
             os.makedirs(args.save_to)
-        torch.save(transformer.state_dict(), args.save_to + "transformer_%d.pt" % (epoch))
-        print("Saving finish...\n")
 
-        checkpoint.write("transformer_%d.pt\n" % epoch)
+        if args.finetune:
+            torch.save(transformer.state_dict(), args.finetune_model_path + "_finetune_epoch%d" % (epoch))
+            checkpoint.write(args.finetune_model_path + "_finetune_epoch%d\n" % (epoch))
+        else:
+            torch.save(transformer.state_dict(), args.save_to + "transformer_epoch%d" % (epoch))
+            checkpoint.write(args.save_to + "transformer_epoch%d\n" % (epoch))
+
         checkpoint.flush()
-
-
+        print("Saving finish...\n")
     checkpoint.close()
 
 if __name__ == "__main__":
