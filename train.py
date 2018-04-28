@@ -14,7 +14,7 @@ import torch.optim
 from optim import ScheduledOptim
 from model import Transformer
 from evaluate import evaluate_loss
-from translate import test
+from translate import test, decode
 from utils import read_corpus, zipped, data_iter, to_input_variable, label_smoothing_loss
 
 def config_initializer():
@@ -22,7 +22,7 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="train", choices=["train", "test"])
+    parser.add_argument('-option', type=str, default="test", choices=["train", "test"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
@@ -250,5 +250,5 @@ if __name__ == "__main__":
         main(args)
 
     if args.option == "test":
-        test(args)
+        decode(args)
 

@@ -3,6 +3,8 @@ import codecs
 import constants
 import numpy as np
 from model import Transformer
+import torch.nn.functional as F
+from my_beam_search import Beam_Search
 from torch.autograd import Variable
 from utils import read_corpus, get_variable, id2word, word2id, to_input_variable
 
@@ -13,6 +15,60 @@ def length_penalty(length, alpha):
     """
     return np.power(((5.0 + length) / 6.), alpha)
 
+def decode(args):
+    """ Decode with beam search """
+
+    # load vocabulary
+    vocab = torch.load(args.vocab)
+
+    # build model
+    translator = Transformer(args, vocab)
+    translator.eval()
+
+    # load parameters
+    translator.load_state_dict(torch.load(args.decode_model_path))
+    if args.cuda:
+        translator = translator.cuda()
+
+    test_data = read_corpus(args.decode_from_file, source="src")
+    output_file = codecs.open(args.decode_output_file, "w", encoding="utf-8")
+    for test in test_data:
+        test_seq, test_pos = to_input_variable([test], vocab.src, cuda=args.cuda, is_test=True)
+        test_seq_beam = test_seq.expand(args.decode_beam_size, test_seq.size(1))
+
+        enc_output = translator.encode(test_seq, test_pos)
+        enc_output_beam = enc_output.expand(args.decode_beam_size, enc_output.size(1), enc_output.size(2))
+
+        beam = Beam_Search(beam_size=args.decode_beam_size, tgt_vocab=vocab.tgt)
+        for i in range(args.decode_max_steps):
+
+            # the first time for beam search
+            if i == 0:
+                # <BOS>
+                pred_var = to_input_variable(beam.candidates[:1], vocab.tgt, cuda=args.cuda, is_test=True)
+                scores = translator.translate(enc_output, test_seq, pred_var)
+            else:
+                pred_var = to_input_variable(beam.candidates, vocab.tgt, cuda=args.cuda, is_test=True)
+                scores = translator.translate(enc_output_beam, test_seq_beam, pred_var)
+
+            log_softmax_scores = F.log_softmax(scores, dim=-1)
+            log_softmax_scores = log_softmax_scores.view(pred_var[0].size(0), -1, log_softmax_scores.size(-1))
+            log_softmax_scores = log_softmax_scores[:, -1, :]
+
+            is_done = beam.advance(log_softmax_scores)
+            beam.update_status()
+
+            if is_done:
+                break
+
+        print("[Source] %s" % " ".join(test))
+        print("[Predict] %s" % beam.get_best_candidate())
+        print()
+
+        output_file.write(beam.get_best_candidate() + "\n")
+        output_file.flush()
+
+    output_file.close()
 
 def test(args):
     """ Test function """
