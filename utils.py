@@ -6,6 +6,13 @@ from collections import defaultdict
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+def length_penalty(length, alpha):
+    """
+    length: candidate translation length
+    alpha : hyper params
+    """
+    return np.power(((5.0 + length) / 6.), alpha)
+
 def label_smoothing_loss(logits, gold_words, pad_idx=constants.PAD, epsilon=0.1, cuda=True):
 
     # one_hot distribution

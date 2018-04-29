@@ -4,16 +4,9 @@ import constants
 import numpy as np
 from model import Transformer
 import torch.nn.functional as F
-from my_beam_search import Beam_Search
+from my_beam_search import Beam_Search, Beam_Search_V2
 from torch.autograd import Variable
 from utils import read_corpus, get_variable, id2word, word2id, to_input_variable
-
-def length_penalty(length, alpha):
-    """
-    length: candidate translation length
-    alpha : hyper params
-    """
-    return np.power(((5.0 + length) / 6.), alpha)
 
 def decode(args):
     """ Decode with beam search """
@@ -39,7 +32,7 @@ def decode(args):
         enc_output = translator.encode(test_seq, test_pos)
         enc_output_beam = enc_output.expand(args.decode_beam_size, enc_output.size(1), enc_output.size(2))
 
-        beam = Beam_Search(beam_size=args.decode_beam_size, tgt_vocab=vocab.tgt)
+        beam = Beam_Search_V2(beam_size=args.decode_beam_size, tgt_vocab=vocab.tgt, length_alpha=args.decode_alpha)
         for i in range(args.decode_max_steps):
 
             # the first time for beam search
