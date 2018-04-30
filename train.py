@@ -54,7 +54,7 @@ def config_initializer():
     parser.add_argument('-embs_share_weight', default=False, type=bool)
     parser.add_argument('-proj_share_weight', default=False, type=bool)
 
-    parser.add_argument('-label_smoothing', default=False, type=bool)
+    parser.add_argument('-label_smoothing', default=False, type=bool, help="Label smoothing")
     parser.add_argument('-label_smoothing_rate', default=0.1, type=float)
 
     parser.add_argument('-finetune', default=False, type=bool)

@@ -14,6 +14,7 @@ def length_penalty(length, alpha):
     return np.power(((5.0 + length) / 6.), alpha)
 
 def label_smoothing_loss(logits, gold_words, epsilon=0.1):
+    """ Label smoothing function """
 
     # one_hot distribution
     one_hot_template = torch.zeros_like(logits)
