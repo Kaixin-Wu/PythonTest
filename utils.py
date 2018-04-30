@@ -13,7 +13,7 @@ def length_penalty(length, alpha):
     """
     return np.power(((5.0 + length) / 6.), alpha)
 
-def label_smoothing_loss(logits, gold_words, pad_idx=constants.PAD, epsilon=0.1, cuda=True):
+def label_smoothing_loss(logits, gold_words, epsilon=0.1):
 
     # one_hot distribution
     one_hot_template = torch.zeros_like(logits)
@@ -26,17 +26,11 @@ def label_smoothing_loss(logits, gold_words, pad_idx=constants.PAD, epsilon=0.1,
     smoothing_loss = -torch.sum(smoothing_loss * log_softmax_scores, dim=-1)
 
     # mask the padding
-    padding_mask =  gold_words.ne(pad_idx)
+    padding_mask =  gold_words.ne(constants.PAD)
     padding_mask_smoothing = padding_mask.float()
     smoothing_loss_padding = torch.sum(smoothing_loss * padding_mask_smoothing)
 
-    # statistic correct words
-    _, argmax_idxs = torch.max(logits, dim=-1)
-    equals_batch_tokens = argmax_idxs.eq(gold_words)
-    equals_batch_tokens_padding = equals_batch_tokens.long() * padding_mask.long()
-    correct_tokens_sum = torch.sum(equals_batch_tokens_padding)
-
-    return smoothing_loss_padding, correct_tokens_sum
+    return smoothing_loss_padding
 
 def get_one_hot(K=100):
 

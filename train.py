@@ -22,7 +22,7 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="test", choices=["train", "test"])
+    parser.add_argument('-option', type=str, default="train", choices=["train", "test"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
@@ -34,7 +34,7 @@ def config_initializer():
 
     parser.add_argument('-params_initializer', default='uniform', choices=['uniform', 'normal'], type=str)
     parser.add_argument('-params_scale', default=1.0, type=float)
-    parser.add_argument('-optimizer', default="Warmup_Adam", type=str, choices=['Warmup_Adam', 'Adam', 'SGD'],
+    parser.add_argument('-optimizer', default="Adam", type=str, choices=['Warmup_Adam', 'Adam', 'SGD'],
                         help="Optimizer methods")
     parser.add_argument('-positional_encoding', default='sinusoid', type=str, choices=['sinusoid', 'learned'],
                         help="Positional encoding methods")
@@ -53,6 +53,9 @@ def config_initializer():
     parser.add_argument('-n_warmup_steps', default=4000, type=int)
     parser.add_argument('-embs_share_weight', default=False, type=bool)
     parser.add_argument('-proj_share_weight', default=False, type=bool)
+
+    parser.add_argument('-label_smoothing', default=False, type=bool)
+    parser.add_argument('-label_smoothing_rate', default=0.1, type=float)
 
     parser.add_argument('-finetune', default=False, type=bool)
     parser.add_argument('-finetune_model_path', default="./models/transformer_epoch4", type=str)
@@ -180,20 +183,29 @@ def main(args):
 
             # get loss according cross_entropy(one_hot distribution)
             weight_loss = cross_entropy_loss(scores, gold_tgt_tokens_flatten)
-            loss = weight_loss / pred_tgt_word_num
+            mean_loss = weight_loss / pred_tgt_word_num
 
             # get loss according cross_entropy(smoothing distribution)
-            smoothing_loss, correct_tokens = label_smoothing_loss(scores, gold_tgt_tokens_flatten)
-            mean_loss = smoothing_loss / pred_tgt_word_num
+            if args.label_smoothing:
+                smoothing_loss = label_smoothing_loss(scores, gold_tgt_tokens_flatten,
+                                                      epsilon=args.label_smoothing_rate)
+                smoothing_mean_loss = smoothing_loss / pred_tgt_word_num
 
-            mean_loss.backward()
+            _, pred_idxs = torch.max(scores, dim=-1)
+            is_target = gold_tgt_tokens_flatten.ne(constants.PAD)
+            correct_tokens = torch.sum(gold_tgt_tokens_flatten.eq(pred_idxs).float() * is_target.float())
+
+            if args.label_smoothing:
+                smoothing_mean_loss.backward()
+            else:
+                mean_loss.backward()
 
             optimizer.step()
 
             if args.optimizer == "Warmup_Adam":
                 optimizer.update_learning_rate()
 
-            total_loss += loss.data[0]
+            total_loss += mean_loss.data[0]
             total_correct_tokens += correct_tokens.data[0]
             total_tgt_words += pred_tgt_word_num
 
