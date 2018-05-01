@@ -4,7 +4,7 @@ from module import Linear, ScaledDotProductAttention, LayerNormalization
 
 class MultiHeadAttention(nn.Module):
 
-    def __init__(self, n_head, d_model, d_k, d_v, dropout=0.1, attention_mechanism="vanilla_attention"):
+    def __init__(self, n_head, d_model, d_k, d_v, dropout_dict, attention_mechanism="vanilla_attention"):
         super(MultiHeadAttention, self).__init__()
 
         self.n_head = n_head
@@ -22,11 +22,11 @@ class MultiHeadAttention(nn.Module):
             self.w_q = Linear(d_model, d_model)
             self.w_kv = Linear(d_model, 2*d_model)
 
-        self.attention = ScaledDotProductAttention(d_model, n_head)
+        self.attention = ScaledDotProductAttention(d_model, n_head, dropout_dict["attention_dropout"])
         self.layer_norm = LayerNormalization(d_model)
 
         self.proj = Linear(n_head*d_v, d_model)
-        self.dropout = nn.Dropout(dropout)
+        self.residual_dropout = nn.Dropout(dropout_dict['residual_dropout'])
 
     def forward(self, q, k, v, attn_mask=None):
         
@@ -53,29 +53,32 @@ class MultiHeadAttention(nn.Module):
 
         # project back to residual size
         outputs = self.proj(outputs)
-        outputs = self.dropout(outputs)
+        outputs = self.residual_dropout(outputs)
 
         return self.layer_norm(outputs + residual), attns
 
 class PositionwiseFeedForward(nn.Module):
     ''' A two-feed-forward-layer module '''
 
-    def __init__(self, d_hid, d_inner_hid, dropout=0.1):
+    def __init__(self, d_hid, d_inner_hid, dropout_dict):
         super(PositionwiseFeedForward, self).__init__()
 
         # nn.Linear is faster than nn.Conv1d
-        ## need parameters initialization
         self.conv1 = nn.Sequential(Linear(d_hid, d_inner_hid), nn.ReLU())
         self.conv2 = Linear(d_inner_hid, d_hid)
         self.layer_norm = LayerNormalization(d_hid)
-        self.dropout = nn.Dropout(dropout)
+
+        self.relu_dropout = nn.Dropout(dropout_dict['relu_dropout'])
+        self.residual_dropout = nn.Dropout(dropout_dict['residual_dropout'])
 
     def forward(self, x):
 
         residual = x
         output = self.conv1(x)
+        output = self.relu_dropout(output)
+
         output = self.conv2(output)
-        output = self.dropout(output)
+        output = self.residual_dropout(output)
 
         return self.layer_norm(output + residual)
 

@@ -45,10 +45,10 @@ class LayerNormalization(nn.Module):
 class ScaledDotProductAttention(nn.Module):
     ''' Scaled Dot-Product Attention '''
 
-    def __init__(self, d_model, n_head, attn_dropout=0.1):
+    def __init__(self, d_model, n_head, attention_dropout):
         super(ScaledDotProductAttention, self).__init__()
         self.temper = np.power(d_model // n_head, 0.5)
-        self.dropout = nn.Dropout(attn_dropout)
+        self.attention_dropout = nn.Dropout(attention_dropout)
 
     def forward(self, q, k, v, attn_mask=None):
 
@@ -64,7 +64,7 @@ class ScaledDotProductAttention(nn.Module):
             attn.data.masked_fill_(attn_mask, -float('inf'))
 
         attn = F.softmax(attn, dim=-1)
-        attn = self.dropout(attn)
+        attn = self.attention_dropout(attn)
         output = torch.bmm(attn, v)
 
         return output, attn

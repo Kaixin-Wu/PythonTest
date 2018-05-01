@@ -22,7 +22,7 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="greedy", choices=["train", "test", "greedy"])
+    parser.add_argument('-option', type=str, default="train", choices=["train", "test", "greedy"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
@@ -49,7 +49,13 @@ def config_initializer():
     parser.add_argument('-n_layers_enc', default=2, type=int, help="Layers of encoder block")
     parser.add_argument('-n_layers_dec', default=2, type=int, help="Layers of decoder block")
 
-    parser.add_argument('-dropout', default=0.1, type=float)
+    # various dropout
+    parser.add_argument('-vanilla_dropout', default=0.1, type=float)
+    parser.add_argument('-embed_dropout', default=0.1, type=float)
+    parser.add_argument('-attention_dropout', default=0.1, type=float)
+    parser.add_argument('-relu_dropout', default=0.1, type=float)
+    parser.add_argument('-residual_dropout', default=0.1, type=float)
+
     parser.add_argument('-n_warmup_steps', default=4000, type=int)
     parser.add_argument('-embs_share_weight', default=False, type=bool)
     parser.add_argument('-proj_share_weight', default=False, type=bool)

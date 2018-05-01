@@ -54,8 +54,11 @@ class Encoder(nn.Module):
         d_k = args.d_k
         d_v = args.d_v
         d_inner_hid = args.d_inner_hid
-        dropout = args.dropout
         n_layers = args.n_layers_enc
+
+        dropout_dict = {'vanilla_dropout': args.vanilla_dropout, 'embed_dropout': args.embed_dropout,
+                        'attention_dropout': args.attention_dropout, 'relu_dropout': args.relu_dropout,
+                        'residual_dropout': args.residual_dropout}
 
         self.n_max_seq = args.max_seq_len
         self.d_model = args.d_model
@@ -77,10 +80,10 @@ class Encoder(nn.Module):
         # limit = get_threshold(n_src_vocab, self.d_word_vec)
         # self.src_word_emb.weight.data.uniform_(-limit, limit)
 
-        self.dropout = nn.Dropout(dropout)
+        self.embed_dropout = nn.Dropout(dropout_dict['embed_dropout'])
 
         self.layer_stack = nn.ModuleList([
-            EncoderLayer(self.d_model, d_inner_hid, n_head, d_k, d_v, dropout=dropout)
+            EncoderLayer(self.d_model, d_inner_hid, n_head, d_k, d_v, dropout_dict)
             for _ in range(n_layers)])
 
     def forward(self, src_seq, src_pos, scale=True, return_attns=False):
@@ -96,7 +99,7 @@ class Encoder(nn.Module):
         ## enc_input += self.position_enc(src_pos)
 
         # Add dropout yo the sums of the embeddings and the positional encodings
-        enc_input = self.dropout(enc_input)
+        enc_input = self.embed_dropout(enc_input)
 
         if return_attns:
             enc_slf_attns = []
@@ -126,8 +129,11 @@ class Decoder(nn.Module):
         d_k = args.d_k
         d_v = args.d_v
         d_inner_hid = args.d_inner_hid
-        dropout = args.dropout
         n_layers = args.n_layers_dec
+
+        dropout_dict = {'vanilla_dropout': args.vanilla_dropout, 'embed_dropout': args.embed_dropout,
+                        'attention_dropout': args.attention_dropout, 'relu_dropout': args.relu_dropout,
+                        'residual_dropout': args.residual_dropout}
 
         self.n_max_seq = args.max_seq_len
         self.d_model = args.d_model
@@ -149,10 +155,10 @@ class Decoder(nn.Module):
         # limit = get_threshold(n_tgt_vocab, self.d_word_vec)
         # self.tgt_word_emb.weight.data.uniform_(-limit, limit)
 
-        self.dropout = nn.Dropout(dropout)
+        self.embed_dropout = nn.Dropout(dropout_dict['embed_dropout'])
 
         self.layer_stack = nn.ModuleList([
-            DecoderLayer(self.d_model, d_inner_hid, n_head, d_k, d_v, dropout=dropout)
+            DecoderLayer(self.d_model, d_inner_hid, n_head, d_k, d_v, dropout_dict)
             for _ in range(n_layers)])
 
     def forward(self, tgt_seq, tgt_pos, src_seq, enc_output, scale=True, return_attns=False):
@@ -165,7 +171,7 @@ class Decoder(nn.Module):
         dec_input += self.position_enc(tgt_pos)
 
         # Add dropout yo the sums of the embeddings and the positional encodings
-        dec_input = self.dropout(dec_input)
+        dec_input = self.embed_dropout(dec_input)
 
         # Decode
         dec_slf_attn_pad_mask = get_attn_padding_mask(tgt_seq, tgt_seq)
@@ -207,7 +213,6 @@ class Transformer(nn.Module):
         self.decoder = Decoder(args, len(vocab.tgt))
 
         self.tgt_word_proj = Linear(args.d_model, len(vocab.tgt), bias=False)
-        self.dropout = nn.Dropout(args.dropout)
 
     def get_trainable_parameters(self):
         """ Avoid updating the position encoding """
