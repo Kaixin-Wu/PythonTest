@@ -8,7 +8,7 @@ from my_beam_search import Beam_Search, Beam_Search_V2
 from torch.autograd import Variable
 from utils import read_corpus, get_variable, id2word, word2id, to_input_variable
 
-def decode(args):
+def test(args):
     """ Decode with beam search """
 
     # load vocabulary
@@ -26,7 +26,7 @@ def decode(args):
     test_data = read_corpus(args.decode_from_file, source="src")
     output_file = codecs.open(args.decode_output_file, "w", encoding="utf-8")
     for test in test_data:
-        test_seq, test_pos = to_input_variable([test], vocab.src, cuda=args.cuda, is_test=True)
+        test_seq, test_pos = to_input_variable([test], vocab.src, cuda=args.cuda)
         test_seq_beam = test_seq.expand(args.decode_beam_size, test_seq.size(1))
 
         enc_output = translator.encode(test_seq, test_pos)
@@ -38,10 +38,10 @@ def decode(args):
             # the first time for beam search
             if i == 0:
                 # <BOS>
-                pred_var = to_input_variable(beam.candidates[:1], vocab.tgt, cuda=args.cuda, is_test=True)
+                pred_var = to_input_variable(beam.candidates[:1], vocab.tgt, cuda=args.cuda)
                 scores = translator.translate(enc_output, test_seq, pred_var)
             else:
-                pred_var = to_input_variable(beam.candidates, vocab.tgt, cuda=args.cuda, is_test=True)
+                pred_var = to_input_variable(beam.candidates, vocab.tgt, cuda=args.cuda)
                 scores = translator.translate(enc_output_beam, test_seq_beam, pred_var)
 
             log_softmax_scores = F.log_softmax(scores, dim=-1)
@@ -63,7 +63,7 @@ def decode(args):
 
     output_file.close()
 
-def test(args):
+def greedy_test(args):
     """ Test function """
 
     # load vocabulary
@@ -85,17 +85,17 @@ def test(args):
     output_file = codecs.open(args.decode_output_file, "w", encoding="utf-8")
     for test, pred in zip(test_data, pred_data):
         pred_output = [constants.PAD_WORD] * args.decode_max_steps
-        test_var = to_input_variable([test], vocab.src, cuda=args.cuda, is_test=True)
+        test_var = to_input_variable([test], vocab.src, cuda=args.cuda)
 
         # only need one time
         enc_output = translator.encode(test_var[0], test_var[1])
         for i in range(args.decode_max_steps):
-            pred_var = to_input_variable([pred[:i+1]], vocab.tgt, cuda=args.cuda, is_test=True)
+            pred_var = to_input_variable([pred[:i+1]], vocab.tgt, cuda=args.cuda)
 
             scores = translator.translate(enc_output, test_var[0], pred_var)
 
             _, argmax_idxs = torch.max(scores, dim=-1)
-            one_step_idx = argmax_idxs[-1].data[0]
+            one_step_idx = argmax_idxs[-1].item()
 
             pred_output[i] = vocab.tgt.id2word[one_step_idx]
             if (one_step_idx == constants.EOS) or (i == args.decode_max_steps-1):

@@ -34,11 +34,11 @@ class MultiHeadAttention(nn.Module):
         
         # Linear projections
         if self.attention_mechanism == "self-attention":
-            qs, ks, vs = torch.split(self.w_qkv(q), split_size=q.size(-1), dim=-1)
+            qs, ks, vs = torch.split(self.w_qkv(q), split_size_or_sections=q.size(-1), dim=-1)
 
         if self.attention_mechanism == "vanilla-attention":
             qs = self.w_q(q)
-            ks, vs = torch.split(self.w_kv(k), split_size=k.size(-1), dim=-1)
+            ks, vs = torch.split(self.w_kv(k), split_size_or_sections=k.size(-1), dim=-1)
 
         # Split and concat
         q_ = torch.cat(torch.chunk(qs, self.n_head, dim=-1), dim=0)  # (h*N, T_q, C/h)

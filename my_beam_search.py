@@ -54,7 +54,7 @@ class Beam_Search(object):
         self.next_ys.append(topk_idxs - prev_k * tgt_vocab_size)
 
         # if the best candidate's output word is <EOS>, then beam search finished
-        if self.next_ys[-1][0].data[0] == constants.EOS:
+        if self.next_ys[-1][0].item() == constants.EOS:
             self.done = True
 
         return self.done
@@ -143,7 +143,7 @@ class Beam_Search_V2():
         self.next_ys.append(topk_idxs - prev_k * tgt_vocab_size)
 
         # method1: if the best candidate's output word is <EOS>, then beam search finished
-        if self.next_ys[-1][0].data[0] == constants.EOS:
+        if self.next_ys[-1][0].item() == constants.EOS:
              self.done = True
 
         # method2: if the number of best candidates is beam-size, then finished

@@ -15,10 +15,10 @@ def evaluate_loss(model, data, criterion, pad_idx=constants.PAD, cuda=True):
     for src_sents, tgt_sents in data_iter(data, batch_size=model.args.batch_size, batch_type=model.args.batch_type, shuffle=False):
         pred_tgt_word_num = sum(len(s[1:]) for s in tgt_sents)
 
-        src = to_input_variable(src_sents, model.vocab.src, cuda=cuda, is_test=True)
-        tgt = to_input_variable([item[:-1] for item in tgt_sents], model.vocab.tgt, cuda=cuda, is_test=True)
+        src = to_input_variable(src_sents, model.vocab.src, cuda=cuda)
+        tgt = to_input_variable([item[:-1] for item in tgt_sents], model.vocab.tgt, cuda=cuda)
 
-        gold_tgt_sents, _ = to_input_variable([item[1:] for item in tgt_sents], model.vocab.tgt, cuda=cuda, is_test=True)
+        gold_tgt_sents, _ = to_input_variable([item[1:] for item in tgt_sents], model.vocab.tgt, cuda=cuda)
         gold_tgt_tokens_flatten = gold_tgt_sents.view(-1)
 
         scores = model(src, tgt)
@@ -30,9 +30,11 @@ def evaluate_loss(model, data, criterion, pad_idx=constants.PAD, cuda=True):
         equals_batch_tokens_padding = equals_batch_tokens.long() * padding_mask.long()
         correct_tokens = torch.sum(equals_batch_tokens_padding)
 
-        total_loss += loss[0]
+        ## total_loss += loss[0]
+        total_loss += loss.item()
         total_tgt_words += pred_tgt_word_num
-        total_correct_tokens += correct_tokens.data[0]
+        ## total_correct_tokens += correct_tokens.data[0]
+        total_correct_tokens += correct_tokens.item()
 
     loss = total_loss / total_tgt_words
     ppl = math.exp(loss)

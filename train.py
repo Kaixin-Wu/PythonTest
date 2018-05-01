@@ -14,7 +14,7 @@ import torch.optim
 from optim import ScheduledOptim
 from model import Transformer
 from evaluate import evaluate_loss
-from translate import test, decode
+from translate import test, greedy_test
 from utils import read_corpus, zipped, data_iter, to_input_variable, label_smoothing_loss
 
 def config_initializer():
@@ -22,7 +22,7 @@ def config_initializer():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-option', type=str, default="train", choices=["train", "test"])
+    parser.add_argument('-option', type=str, default="greedy", choices=["train", "test", "greedy"])
 
     # training phase
     parser.add_argument('-cuda', action='store_true', default=True, help="Use GPU")
@@ -40,10 +40,10 @@ def config_initializer():
                         help="Positional encoding methods")
     parser.add_argument('-lr', default=0.0001, type=float, help="Learning rate")
 
-    parser.add_argument('-d_model', default=512, type=int)
-    parser.add_argument('-d_inner_hid', default=512, type=int)
-    parser.add_argument('-d_k', default=64, type=int)
-    parser.add_argument('-d_v', default=64, type=int)
+    parser.add_argument('-d_model', default=256, type=int)
+    parser.add_argument('-d_inner_hid', default=256, type=int)
+    parser.add_argument('-d_k', default=32, type=int)
+    parser.add_argument('-d_v', default=32, type=int)
 
     parser.add_argument('-n_head', default=8, type=int)
     parser.add_argument('-n_layers_enc', default=2, type=int, help="Layers of encoder block")
@@ -54,7 +54,7 @@ def config_initializer():
     parser.add_argument('-embs_share_weight', default=False, type=bool)
     parser.add_argument('-proj_share_weight', default=False, type=bool)
 
-    parser.add_argument('-label_smoothing', default=False, type=bool, help="Label smoothing")
+    parser.add_argument('-label_smoothing', default=True, type=bool, help="Label smoothing")
     parser.add_argument('-label_smoothing_rate', default=0.1, type=float)
 
     parser.add_argument('-finetune', default=False, type=bool)
@@ -77,7 +77,7 @@ def config_initializer():
     parser.add_argument('-valid_tgt', default='./2000sents/valid.en', type=str, help="Path of the valid target file")
 
     # inference phase
-    parser.add_argument('-decode_model_path', type=str, default="./models/transformer_epoch4", help="Path of the model file")
+    parser.add_argument('-decode_model_path', type=str, default="./models/transformer_epoch8", help="Path of the model file")
     parser.add_argument('-decode_from_file', type=str, default="./2000sents/valid.ch", help="Path of the input file to decode")
     parser.add_argument('-decode_output_file', type=str, default="./2000sents/decode.output", help="Output of the decode file")
 
@@ -205,8 +205,10 @@ def main(args):
             if args.optimizer == "Warmup_Adam":
                 optimizer.update_learning_rate()
 
-            total_loss += mean_loss.data[0]
-            total_correct_tokens += correct_tokens.data[0]
+            ## total_loss += mean_loss.data[0]
+            total_loss += mean_loss.item()
+            ## total_correct_tokens += correct_tokens.data[0]
+            total_correct_tokens += correct_tokens.item()
             total_tgt_words += pred_tgt_word_num
 
             freq += 1
@@ -261,6 +263,9 @@ if __name__ == "__main__":
     if args.option == "train":
         main(args)
 
+    if args.option == "greedy":
+        greedy_test(args)
+
     if args.option == "test":
-        decode(args)
+        test(args)
 

@@ -212,27 +212,27 @@ def input_format(sents, pad_token):
 
     return sents_t, pos
 
-def get_variable(idxs, cuda=False, is_test=False):
+def get_variable(idxs, cuda=False):
 
     sents_t, pos = input_format(idxs, constants.PAD)
 
-    sents_var = Variable(torch.LongTensor(sents_t), volatile=is_test, requires_grad=False)
-    pos_var = Variable(torch.LongTensor(pos), volatile=is_test, requires_grad=False)
+    sents_var = Variable(torch.LongTensor(sents_t), requires_grad=False)
+    pos_var = Variable(torch.LongTensor(pos), requires_grad=False)
     if cuda:
         sents_var = sents_var.cuda()
         pos_var = pos_var.cuda()
 
     return sents_var, pos_var
 
-def to_input_variable(sents, vocab, cuda=False, is_test=False):
-
+def to_input_variable(sents, vocab, cuda=False):
     """ Return a tensor of shape(batch_size, seq_max_len) """
 
     word_ids = word2id(sents, vocab)
     sents_t, pos = input_format(word_ids, vocab[constants.PAD_WORD])
 
-    sents_var = Variable(torch.LongTensor(sents_t), volatile=is_test, requires_grad=False)
-    pos_var = Variable(torch.LongTensor(pos), volatile=is_test, requires_grad=False)
+    sents_var = Variable(torch.LongTensor(sents_t), requires_grad=False)
+    pos_var = Variable(torch.LongTensor(pos), requires_grad=False)
+
     if cuda:
         sents_var = sents_var.cuda()
         pos_var = pos_var.cuda()
