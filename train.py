@@ -138,7 +138,7 @@ def init_training(args):
 
     # multi gpus
     if torch.cuda.device_count() > 1:
-        print("[Multi GPU] using", torch.cuda.device_count(), "GPUs")
+        print("[Multi GPU] using", torch.cuda.device_count(), "GPUs\n")
         transformer = nn.DataParallel(transformer)
 
     return vocab, transformer, optimizer, cross_entropy_loss
@@ -240,7 +240,11 @@ def main(args):
 
             if freq % args.validFreq == 0:
                 t0 = time.time()
-                valid_loss, ppl, acc = evaluate_loss(transformer, valid_data, cross_entropy_loss)
+                if torch.cuda.device_count() > 1:
+                    valid_loss, ppl, acc = evaluate_loss(transformer.module, valid_data, cross_entropy_loss)
+                else:
+                    valid_loss, ppl, acc = evaluate_loss(transformer, valid_data, cross_entropy_loss)
+
                 t1 = time.time()
                 print("[Valid] [loss:%5.2f] [acc:%5.2f%%] [ppl:%5.2f] [time:%5.2fs]" %
                       (valid_loss, acc, ppl, t1-t0))
