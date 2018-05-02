@@ -74,8 +74,8 @@ class Encoder(nn.Module):
             init.xavier_normal(self.position_enc.weight.data)
 
         self.src_word_emb = nn.Embedding(n_src_vocab, self.d_word_vec, padding_idx=constants.PAD)
-        # self.src_word_emb.weight.data.normal_(-np.power(self.d_model, -0.5), np.power(self.d_model, -0.5))
-        init.xavier_normal_(self.src_word_emb.weight.data)
+        self.src_word_emb.weight.data.normal_(-np.power(self.d_model, -0.5), np.power(self.d_model, -0.5))
+        # init.xavier_normal_(self.src_word_emb.weight.data)
         self.src_word_emb.weight.data[constants.PAD].fill_(0)
         # limit = get_threshold(n_src_vocab, self.d_word_vec)
         # self.src_word_emb.weight.data.uniform_(-limit, limit)
@@ -149,8 +149,8 @@ class Decoder(nn.Module):
             init.xavier_normal(self.position_enc.weight.data)
 
         self.tgt_word_emb = nn.Embedding(n_tgt_vocab, self.d_word_vec, padding_idx=constants.PAD)
-        # self.tgt_word_emb.weight.data.normal_(-np.power(self.d_model, -0.5), np.power(self.d_model, -0.5))
-        init.xavier_normal_(self.tgt_word_emb.weight.data)
+        self.tgt_word_emb.weight.data.normal_(-np.power(self.d_model, -0.5), np.power(self.d_model, -0.5))
+        # init.xavier_normal_(self.tgt_word_emb.weight.data)
         self.tgt_word_emb.weight.data[constants.PAD].fill_(0)
         # limit = get_threshold(n_tgt_vocab, self.d_word_vec)
         # self.tgt_word_emb.weight.data.uniform_(-limit, limit)

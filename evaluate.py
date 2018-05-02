@@ -3,8 +3,7 @@ import time
 import torch
 import subprocess
 import constants
-from utils import data_iter, to_input_variable, read_corpus
-
+from utils import data_iter, to_input_variable
 
 def evaluate_loss(model, data, criterion, pad_idx=constants.PAD, cuda=True):
     model.eval()
@@ -12,7 +11,7 @@ def evaluate_loss(model, data, criterion, pad_idx=constants.PAD, cuda=True):
     total_loss = 0.
     total_tgt_words = 0
     total_correct_tokens = 0
-    for src_sents, tgt_sents in data_iter(data, batch_size=model.args.batch_size, batch_type=model.args.batch_type, shuffle=False):
+    for src_sents, tgt_sents in data_iter(data, batch_size=model.args.valid_batch_size, batch_type=model.args.batch_type, shuffle=False):
         pred_tgt_word_num = sum(len(s[1:]) for s in tgt_sents)
 
         src = to_input_variable(src_sents, model.vocab.src, cuda=cuda)
@@ -30,10 +29,8 @@ def evaluate_loss(model, data, criterion, pad_idx=constants.PAD, cuda=True):
         equals_batch_tokens_padding = equals_batch_tokens.long() * padding_mask.long()
         correct_tokens = torch.sum(equals_batch_tokens_padding)
 
-        ## total_loss += loss[0]
         total_loss += loss.item()
         total_tgt_words += pred_tgt_word_num
-        ## total_correct_tokens += correct_tokens.data[0]
         total_correct_tokens += correct_tokens.item()
 
     loss = total_loss / total_tgt_words

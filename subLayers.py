@@ -32,7 +32,7 @@ class MultiHeadAttention(nn.Module):
         
         residual = q
         
-        # Linear projections
+        # linear projections
         if self.attention_mechanism == "self-attention":
             qs, ks, vs = torch.split(self.w_qkv(q), split_size_or_sections=q.size(-1), dim=-1)
 
@@ -40,7 +40,7 @@ class MultiHeadAttention(nn.Module):
             qs = self.w_q(q)
             ks, vs = torch.split(self.w_kv(k), split_size_or_sections=k.size(-1), dim=-1)
 
-        # Split and concat
+        # split and concat
         q_ = torch.cat(torch.chunk(qs, self.n_head, dim=-1), dim=0)  # (h*N, T_q, C/h)
         k_ = torch.cat(torch.chunk(ks, self.n_head, dim=-1), dim=0)  # (h*N, T_q, C/h)
         v_ = torch.cat(torch.chunk(vs, self.n_head, dim=-1), dim=0)  # (h*N, T_q, C/h)

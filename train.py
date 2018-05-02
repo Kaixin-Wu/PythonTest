@@ -29,6 +29,8 @@ def config_initializer():
     parser.add_argument('-epochs', default=20, type=int, help="Max epochs")
     parser.add_argument('-batch_type', default="sentence_batch", type=str, choices=['sentence_batch', 'word_batch'],
                         help="1.sentence_batch(Sentence number for each batch) 2.word_batch(token number for each batch)")
+
+    parser.add_argument('-valid_batch_size', default=10, type=int, help='Valid batch size in evaluation')
     parser.add_argument('-batch_size', default=20, type=int, help="Batch size")
     parser.add_argument('-max_seq_len', default=120, type=int, help="Using for Recording positional encoding")
 
@@ -50,10 +52,10 @@ def config_initializer():
     parser.add_argument('-n_layers_dec', default=2, type=int, help="Layers of decoder block")
 
     # various dropout
-    parser.add_argument('-vanilla_dropout', default=0.1, type=float)
+    parser.add_argument('-vanilla_dropout', default=0.0, type=float)
     parser.add_argument('-embed_dropout', default=0.1, type=float)
-    parser.add_argument('-attention_dropout', default=0.1, type=float)
-    parser.add_argument('-relu_dropout', default=0.1, type=float)
+    parser.add_argument('-attention_dropout', default=0.0, type=float)
+    parser.add_argument('-relu_dropout', default=0.0, type=float)
     parser.add_argument('-residual_dropout', default=0.1, type=float)
 
     parser.add_argument('-n_warmup_steps', default=4000, type=int)
@@ -134,6 +136,11 @@ def init_training(args):
     if args.optimizer == 'SGD':
         optimizer = torch.optim.SGD(params=transformer.get_trainable_parameters(), lr=args.lr)
 
+    # multi gpus
+    if torch.cuda.device_count() > 1:
+        print("[Multi GPU] using", torch.cuda.device_count(), "GPUs")
+        transformer = nn.DataParallel(transformer)
+
     return vocab, transformer, optimizer, cross_entropy_loss
 
 def main(args):
@@ -211,9 +218,7 @@ def main(args):
             if args.optimizer == "Warmup_Adam":
                 optimizer.update_learning_rate()
 
-            ## total_loss += mean_loss.data[0]
             total_loss += mean_loss.item()
-            ## total_correct_tokens += correct_tokens.data[0]
             total_correct_tokens += correct_tokens.item()
             total_tgt_words += pred_tgt_word_num
 
